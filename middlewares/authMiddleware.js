@@ -22,4 +22,4 @@ export const authenticateUser = catchAsync( async( req, res, next) => {
         console.log("Error in user authentication middleware",error.message);
         return next(new AppError("Token is invalid or has expired", 403));
     }
-})
+});

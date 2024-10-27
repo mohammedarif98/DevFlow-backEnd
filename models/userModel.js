@@ -15,6 +15,11 @@ const userSchema = new mongoose.Schema({
         unique: true,
         lowercase: true
     },
+    role: {
+      type: String,
+      enum: ["user","author"],
+      default: "user",  
+    },
     profilePhoto: {
         type: String,
         required: false,
