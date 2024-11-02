@@ -39,9 +39,12 @@ export const registerUser = catchAsync(async (req, res, next) => {
 
     await sendMail( email, 'OTP For Email Verification', `<h1>Your OTP is: ${otp}</h1>`);
 
+    // Store the email in the session
+    req.session.email = email;
+
     return res.status( 201 ).json({
         status: 'success',
-        message: 'User registered. OTP sent to email',
+        message: 'User registered. OTP sent to Email',
     });
 });
 
@@ -67,7 +70,7 @@ export const verifyOTP = catchAsync( async (req, res, next) => {
    
     res.status( 200 ).json({
         status: 'success',
-        message: 'Email verified and Authenticated successfully!',
+        message: 'Successfully Verified Account',
     });
 });
 
@@ -75,7 +78,7 @@ export const verifyOTP = catchAsync( async (req, res, next) => {
 
 // ------------------ Resend email OTP -----------------
 export const resendOTP = catchAsync(async (req, res, next) => {
-    const { email } = req.body;
+    const email = req.session.email;
 
     if (!email) return next(new AppError("Email is required!", 400));
 
@@ -83,10 +86,12 @@ export const resendOTP = catchAsync(async (req, res, next) => {
     if (!user) return next(new AppError("User not found.", 404));
 
     const existingOTP = await OTP.findOne({ userId: user._id });
-    if (existingOTP && existingOTP.otpExpires > Date.now()) return next(new AppError("OTP has not yet expired. Please check your email for the current OTP.", 400));
+    if (existingOTP && existingOTP.otpExpires > Date.now()) {
+        return next(new AppError("OTP has not yet expired. Please check your email for current OTP", 400));
+    }
 
     const otp = generateOTP();
-    const otpExpires = Date.now() + 5 * 60 * 1000; 
+    const otpExpires = Date.now() + 5 * 60 * 1000;
 
     // Create or update the OTP record
     if (existingOTP) {
@@ -103,12 +108,11 @@ export const resendOTP = catchAsync(async (req, res, next) => {
 
     await sendMail(email, 'New OTP for Email Verification', `<h1>Your new OTP is: ${otp}</h1>`);
 
-    res.status( 200 ).json({
+    res.status(200).json({
         status: 'success',
         message: 'New OTP has been sent to your email.',
     });
 });
-
 
 
 // ------------------ User Login -------------------
