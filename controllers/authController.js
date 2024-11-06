@@ -152,7 +152,7 @@ export const loginUser = catchAsync( async (req, res, next) => {
 
     return res.status( 200 ).json({
         status: "success",
-        message: "Login successful",
+        message: "Login successfull",
         accessToken,
         refreshToken,
         user: {
@@ -163,7 +163,7 @@ export const loginUser = catchAsync( async (req, res, next) => {
         },
       });
     
-})
+});
 
 
 // ------------------ User Logout -------------------
@@ -187,19 +187,20 @@ export const logoutUser = catchAsync(async (req, res, next) => {
 });
 
 
-// ------------------ refresh the access token -------------------
+// ------------------ refresh the user access token -------------------
 export const refreshAccessToken = catchAsync(async (req, res, next) => {
     
     const refreshToken = req.cookies['refresh-token'];
     if (!refreshToken) return next(new AppError("Refresh token is missing", 403));
+    
     try {
         // console.log("Refresh Token: ", refreshToken);
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN_SECRET_KEY);
       
-        const user = await User.findById(decoded.id).select('-password');                                   // Check if user still exists
+        const user = await User.findById(decoded.id).select('-password');     // Check if user still exists
         if (!user) return next(new AppError("User not found", 401));
     
-        const newAccessToken = generateAccessToken(user._id);                           // Generate a new access token
+        const newAccessToken = generateAccessToken(user._id);         
 
         const cookieOptions = {
                 expires: new Date(Date.now() + 15 * 60 * 1000), 
@@ -226,3 +227,5 @@ export const refreshAccessToken = catchAsync(async (req, res, next) => {
 // ------------------  -------------------
 // ------------------  -------------------
 // ------------------  -------------------
+
+
