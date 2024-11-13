@@ -4,10 +4,9 @@ import Admin from '../models/adminModel.js';
 import AppError from "../utils/appError.js"; 
 
 
-
 export const authenticateAdmin = catchAsync(async(req, res, next) => {
     
-    const token = req.cookies['access-token'] || req.headers['authorization']?.splite(' ')[1];
+    const token = req.cookies['admin-access-token'] || req.headers['authorization']?.splite(' ')[1];
     if( !token ) return next( new AppError(" You are not Logged in! please log",401));
 
     try{

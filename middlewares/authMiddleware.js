@@ -4,10 +4,9 @@ import User from '../models/userModel.js';
 import AppError from "../utils/appError.js"; 
  
 
-
 export const authenticateUser = catchAsync( async( req, res, next) => {
 
-    const token = req.cookies['access-token'] || req.headers['authorization']?.split(' ')[1];
+    const token = req.cookies['user-access-token'] || req.headers['authorization']?.split(' ')[1];
     if ( !token ) return next( new AppError('You are not logged in! Please log .', 401));
 
     try {
@@ -16,7 +15,7 @@ export const authenticateUser = catchAsync( async( req, res, next) => {
         const user = await User.findById(decoded.id).select('-password');
         if (!user) return next(new AppError('User not found', 401));
 
-        req.user = user;   //* Attach the user to the request object
+        req.user = user;  
         next();
     }catch(error){
         console.log("Error in user authentication middleware",error.message);
