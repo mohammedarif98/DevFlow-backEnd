@@ -150,7 +150,7 @@ export const loginUser = catchAsync(async (req, res, next) => {
   const refreshToken = generateRefreshToken(user._id);
 
   const accessTokenCookieOptions = {
-    expires: new Date(Date.now() + 2 * 60 * 1000),
+    expires: new Date(Date.now() + 15 * 60 * 1000),
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "Lax",
@@ -219,7 +219,7 @@ export const refreshAccessToken = catchAsync(async (req, res, next) => {
     const newAccessToken = generateAccessToken(user._id);
 
     const cookieOptions = {
-      expires: new Date(Date.now() + 2 * 60 * 1000),
+      expires: new Date(Date.now() + 15 * 60 * 1000),
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "Lax",

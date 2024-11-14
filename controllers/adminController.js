@@ -32,7 +32,7 @@ export const adminLogin = catchAsync(async (req, res, next) => {
 
   res.cookie("admin-access-token", accessToken, {
     ...cookieOptions,
-    expires: new Date(Date.now() + 2 * 60 * 1000),
+    expires: new Date(Date.now() + 15 * 60 * 1000),
   });
   res.cookie("admin-refresh-token", refreshToken, {
     ...cookieOptions,
@@ -91,7 +91,7 @@ export const refreshAdminAccessToken = catchAsync(async (req, res, next) => {
     const newAccessToken = generateAccessToken(admin._id);
 
     const cookieOptions = {
-      expires: new Date(Date.now() + 2 * 60 * 1000),
+      expires: new Date(Date.now() + 15 * 60 * 1000),
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "Lax",
@@ -113,7 +113,7 @@ export const refreshAdminAccessToken = catchAsync(async (req, res, next) => {
 
 //------------------- list all users ----------------------
 export const getAllUsers = catchAsync(async (req, res, next) => {
-  const users = await User.find();
+  const users = await User.find({ isVerified: true });
   if (!users || users.length === 0) {
     return next(new AppError("No Users Founded", 404));
   }
@@ -123,3 +123,37 @@ export const getAllUsers = catchAsync(async (req, res, next) => {
     data: { users },
   });
 });
+
+
+//------------------- blocking the users ----------------------
+export const blockUser = catchAsync(async( req, res, next) => {
+  const { userId } = req.params;
+  const user = await User.findById(userId);
+  if(!user){
+    return next(new AppError("User Not Found",404));
+  }
+  if(!user.isVerified){
+    return next(new AppError('User is not verified',403));
+  }
+  user.isBlocked = true;
+  await user.save();
+  
+  return res.status(200).json({ status: "success", message: "User blocked successfully"});
+});
+
+
+//------------------- unblocking the users ----------------------
+export const unblockUser = catchAsync(async( req, res, next) => {
+  const { userId } = req.params;
+  const user = await User.findById(userId);
+  if(!user){
+    return next(new AppError("User Not Found",404));
+  }
+  if(!user.isVerified){
+    return next(new AppError('User is not verified',403));
+  }
+  user.isBlocked = false;
+  await user.save();
+
+  return res.status(200).json({ status: "success", message: "User unblocked successfully"});
+})
