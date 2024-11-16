@@ -141,7 +141,12 @@ export const loginUser = catchAsync(async (req, res, next) => {
   if (!user.isVerified)
     return next(
       new AppError("Your email has not been verified. Verify email.", 400)
-    );
+  );
+
+  if (user.isBlocked)
+    return next(
+      new AppError("Your account has been blocked by admin. Please contact admin", 403)
+  );
 
   const isPasswordCorrect = await comparePassword(password, user.password);
   if (!isPasswordCorrect) return next(new AppError("Invalid credentials", 401));

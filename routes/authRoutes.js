@@ -17,13 +17,7 @@ router.post("/user-refresh-token", refreshAccessToken);
 router.get('/profile', authenticateUser, getUserProfile);
 
 
-
-
 export default router;
-
-
-
-
 
 
 

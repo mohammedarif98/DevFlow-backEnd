@@ -13,12 +13,20 @@ export const authenticateUser = catchAsync( async( req, res, next) => {
         const decoded = jwt.verify( token, process.env.JWT_ACCESS_TOKEN_SECRET_KEY );
 
         const user = await User.findById(decoded.id).select('-password');
-        if (!user) return next(new AppError('User not found', 401));
+        if (!user) return next(new AppError('User not found', 404));
+        if (user.isBlocked) {
+            res.clearCookie('user-access-token');
+            res.clearCookie('user-refresh-token');
+            return res.status(403).json({
+              status: 'error',
+              message: 'Your account has been blocked. Please contact admin.',
+            });
+          }
 
         req.user = user;  
         next();
     }catch(error){
         console.log("Error in user authentication middleware",error.message);
-        return next(new AppError("Token is invalid or has expired", 403));
+        return next(new AppError("Token is invalid or has expired", 401));
     }
 });

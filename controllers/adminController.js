@@ -136,7 +136,7 @@ export const blockUser = catchAsync(async( req, res, next) => {
     return next(new AppError('User is not verified',403));
   }
   user.isBlocked = true;
-  await user.save();
+  await user.save(); 
   
   return res.status(200).json({ status: "success", message: "User blocked successfully"});
 });
