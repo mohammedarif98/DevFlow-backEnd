@@ -7,6 +7,7 @@ import sendMail from "../utils/sendEmail.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
 import comparePassword from "../utils/comparePassword.js";
 import jwt from "jsonwebtoken";
+import bcryptjs from 'bcryptjs'
 
 
 
@@ -171,17 +172,69 @@ export const loginUser = catchAsync(async (req, res, next) => {
   res.cookie("user-access-token", accessToken, accessTokenCookieOptions);
   res.cookie("user-refresh-token", refreshToken, refreshTokenCookieOptions);
 
+  const { password:userpassword, ...rest } = user.toObject();
+
   return res.status(200).json({
     status: "success",
     message: "Login successfull",
     accessToken,
     refreshToken,
-    user: {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      isVerified: user.isVerified,
-    },
+    user: rest,
+  });
+});
+
+
+// --------------- Google authentication -------------------
+export const googleAuth = catchAsync(async (req, res, next) => {
+
+  const { email, name, photo } = req.body;
+
+  let user = await User.findOne({ email });
+  if (!user) {
+    const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+    console.log('Generated Password:', generatedPassword);
+    const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
+    console.log('Hashed Password:', hashedPassword);
+
+    user = new User({
+      username: name,
+      email: email,
+      profilePhoto: photo,
+      password: hashedPassword,
+      isVerified: true,
+    });
+    user.confirmPassword = hashedPassword;
+    await user.save();
+  }
+
+  const accessToken = generateAccessToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
+
+  const accessTokenCookieOptions = {
+    expires: new Date(Date.now() + 15 * 60 * 1000),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "Lax",
+  };
+
+  const refreshTokenCookieOptions = {
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "Lax",
+  };
+
+  res.cookie("user-access-token", accessToken, accessTokenCookieOptions);
+  res.cookie("user-refresh-token", refreshToken, refreshTokenCookieOptions);
+
+  const { password, ...rest } = user.toObject();
+
+  return res.status(200).json({
+    status: "success",
+    message: "Google authentication successful",
+    accessToken,
+    refreshToken,
+    user: rest,
   });
 });
 
@@ -251,16 +304,12 @@ export const getUserProfile = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError("User Not Found", 404));
   }
+
+  const { password, ...rest } = user.toObject();
+
   res.status(200).json({
     status: "success",
     message: "User Profile Fetched Successfully",
-    user: {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      isVerified: user.isVerified,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    },
+    user: rest
   });
 });

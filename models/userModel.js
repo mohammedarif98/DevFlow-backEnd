@@ -22,8 +22,7 @@ const userSchema = new mongoose.Schema({
     },
     profilePhoto: {
         type: String,
-        required: false,
-        default: '',
+        default: 'https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/man-user-circle-icon.svg',
     },
     password: {
         type: String,

@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateUser } from "../middlewares/authMiddleware.js";
-import { getUserProfile, loginUser, logoutUser, refreshAccessToken, registerUser, resendOTP, verifyOTP } from "../controllers/authController.js";
+import { getUserProfile, googleAuth, loginUser, logoutUser, refreshAccessToken, registerUser, resendOTP, verifyOTP } from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -9,6 +9,7 @@ router.post("/register-user", registerUser);
 router.post("/verifyOTP", verifyOTP);
 router.get('/resendOTP', resendOTP);
 router.post("/login-user", loginUser);
+router.post("/google-login", googleAuth);
 router.post("/logout-user", logoutUser);
 router.post("/user-refresh-token", refreshAccessToken);
 
