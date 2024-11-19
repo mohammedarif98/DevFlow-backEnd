@@ -1,6 +1,7 @@
 import express from "express";
 import { authenticateAdmin } from "../middlewares/adminMiddleware.js";
-import { adminLogin, adminLogout, blockUser, getAllUsers, refreshAdminAccessToken, unblockUser } from "../controllers/adminController.js";
+import { addCategory, adminLogin, adminLogout, blockUser, editCategory, getAllUsers, refreshAdminAccessToken, unblockUser } from "../controllers/adminController.js";
+import { upload } from "../middlewares/multer/multer.js";
 
 const router = express.Router();
 
@@ -14,11 +15,12 @@ router.get('/list-users',authenticateAdmin, getAllUsers);
 router.post('/login-admin',adminLogin);
 router.post('/logout-admin',adminLogout);
 router.post('/admin-refresh-token',refreshAdminAccessToken);
-
+router.post('/categories', authenticateAdmin, upload.single('categoryImage'), addCategory);
 
 // ------------------ PUT methods --------------------
-router.put('/block-user/:userId',authenticateAdmin, blockUser);
-router.put('/unblock-user/:userId',authenticateAdmin, unblockUser);
+router.put('/block-user/:userId', authenticateAdmin, blockUser);
+router.put('/unblock-user/:userId', authenticateAdmin, unblockUser);
+router.put('/edit-category/:categoryId', authenticateAdmin, upload.single('categoryImage'), editCategory);
 
 
 

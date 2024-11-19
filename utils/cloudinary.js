@@ -27,7 +27,6 @@ export const uploadCloud = async (buffer, filename, purpose) => {
       png: "image/png",
       gif: "image/gif",
       mp4: "video/mp4",
-      avi: "video/x-msvideo",
     };
 
     if (!filename) {

@@ -9,6 +9,7 @@ import comparePassword from "../utils/comparePassword.js";
 import jwt from "jsonwebtoken";
 import bcryptjs from 'bcryptjs'
 import { uploadCloud } from "../utils/cloudinary.js";
+import Blog from "../models/blogModal.js";
 
 
 
@@ -331,7 +332,7 @@ export const updateUserProfile = catchAsync(async(req, res, next) => {
     const filename = req.file.originalname;
     if (!filename) return next(new AppError("File name is undefined",400));
     const imageUrl = await uploadCloud(req.file.buffer, filename, 'profile');
-    if(!imageUrl) return next(new AppError("Failed to upload profile photo"));
+    if(!imageUrl) return next(new AppError("Failed to upload profile photo"),500);
     user.profilePhoto = imageUrl;
   }
 
@@ -341,5 +342,91 @@ export const updateUserProfile = catchAsync(async(req, res, next) => {
   return res.status(200).json({ 
     message: 'Profile updated successfully',
     user: rest
+  });
+});
+
+
+// ---------------- Add blog post--------------------
+export const createBlogPost = catchAsync(async(req, res, next) => {
+  const { title, content, tags, category, isPublished } = req.body;
+  const author = req.user._id; 
+
+  if (!title || !content) {
+    return next(new AppError("Title and content are required", 400));
+  }
+
+  let coverImageUrl = '';
+  if (req.file) {
+    coverImageUrl = await uploadCloud(req.file.buffer, req.file.originalname, 'blog');
+    if (!coverImageUrl) {
+      return next(new AppError("Failed to upload image", 500));
+    }
+  }
+
+  const newBlogPost = new Blog({
+    title: title.trim(),
+    content: content,
+    author: author,
+    tags: tags || [],
+    category: category || null,
+    coverImage: coverImageUrl, 
+    isPublished: isPublished || false,
+    publishedAt: isPublished ? new Date() : null,
+  });
+
+  await newBlogPost.save();
+
+  return res.status(201).json({
+    status: 'success',
+    message: "Blog post created successfully.",
+    blogPost: newBlogPost,
+  });
+});
+
+
+// ---------------- Edit blog post --------------------
+export const editBlogPost = catchAsync(async (req, res, next) => {
+  const { title, content, tags, category, isPublished } = req.body;
+  const { blogId } = req.params; 
+  const userId = req.user._id; 
+  let updatedCoverImageUrl = null;
+
+  if (!blogId) {
+    return next(new AppError("Blog ID is required", 400));
+  }
+
+  const blogPost = await Blog.findById(blogId);
+  if (!blogPost) {
+    return next(new AppError("Blog post not found", 404));
+  }
+
+  if (blogPost.author.toString() !== userId.toString()) {
+    return next(new AppError("You are not authorized to edit this blog post", 403));
+  }
+
+  if (req.file) {
+    updatedCoverImageUrl = await uploadCloud(req.file.buffer, req.file.originalname, 'blog');
+    if (!updatedCoverImageUrl) {
+      return next(new AppError("Failed to upload image", 500));
+    }
+  }
+
+  if (title) blogPost.title = title.trim();
+  if (content) blogPost.content = content;
+  if (tags) blogPost.tags = tags;
+  if (category) blogPost.category = category;
+  if (updatedCoverImageUrl) blogPost.coverImage = updatedCoverImageUrl;
+
+  if (typeof isPublished !== "undefined") {
+    blogPost.isPublished = isPublished;
+    blogPost.publishedAt = isPublished ? new Date() : null;
+  }
+
+  await blogPost.save();
+
+  return res.status(200).json({
+    status: 'success',
+    message: "Blog post updated successfully.",
+    blogPost,
   });
 });

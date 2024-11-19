@@ -1,7 +1,9 @@
 import { catchAsync } from "../error/catchAsync.js";
 import Admin from "../models/adminModel.js";
+import Category from "../models/categoryModel.js";
 import User from "../models/userModel.js";
 import AppError from "../utils/appError.js";
+import { uploadCloud } from "../utils/cloudinary.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
 import jwt from "jsonwebtoken";
 
@@ -156,4 +158,88 @@ export const unblockUser = catchAsync(async( req, res, next) => {
   await user.save();
 
   return res.status(200).json({ status: "success", message: "User unblocked successfully"});
-})
+});
+
+
+// -------------- adding category -----------------
+export const addCategory = catchAsync(async( req, res, next) => {
+  const { categoryName, description } = req.body;
+
+  if( !categoryName || !description){
+    return next(new AppError("All fields are required",400));
+  }
+
+  const existedCategory = await Category.findOne({categoryName: categoryName.trim()});
+  if(existedCategory){
+    return next(new AppError("Category already exist",400));
+  }
+
+  if (!req.file) {
+    return next(new AppError("Category image is required", 400));
+  }
+
+  const uploadedImageUrl = await uploadCloud(req.file.buffer, req.file.originalname, 'category');
+
+  if (!uploadedImageUrl) {
+    return next(new AppError("Failed to upload image", 500));
+  }
+
+  const newCategory = new Category({
+    categoryName: categoryName.trim(),
+    categoryImage: uploadedImageUrl,
+    description: description || "",
+  });
+
+  await newCategory.save();
+
+  return res.status(201).json({
+    status: 'success',
+    message: "Category added successfully.",
+    category: newCategory,
+  });
+
+});
+
+
+// --------------- category edit function ----------------
+export const editCategory = catchAsync(async (req, res, next) => {
+  const { categoryId } = req.params;
+  const { categoryName, description } = req.body;
+
+  if (!categoryId) {
+    return next(new AppError("Category ID is required", 400));
+  }
+
+  const category = await Category.findById(categoryId);
+  if (!category) {
+    return next(new AppError("Category not found", 404));
+  }
+
+  if (categoryName) {
+    const existedCategory = await Category.findOne({ categoryName: categoryName.trim() });
+    if (existedCategory && existedCategory._id.toString() !== categoryId) {
+      return next(new AppError("Category name already exists", 400));
+    }
+    category.categoryName = categoryName.trim();
+  }
+
+  if (description) {
+    category.description = description;
+  }
+
+  if (req.file) {
+    const uploadedImageUrl = await uploadCloud(req.file.buffer, req.file.originalname, 'category');
+    if (!uploadedImageUrl) {
+      return next(new AppError("Failed to upload image", 500));
+    }
+    category.categoryImage = uploadedImageUrl;
+  }
+
+  await category.save();
+
+  return res.status(200).json({
+    status: 'success',
+    message: "Category updated successfully.",
+    category: category,
+  });
+});
