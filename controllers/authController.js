@@ -8,6 +8,7 @@ import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
 import comparePassword from "../utils/comparePassword.js";
 import jwt from "jsonwebtoken";
 import bcryptjs from 'bcryptjs'
+import { uploadCloud } from "../utils/cloudinary.js";
 
 
 
@@ -310,6 +311,35 @@ export const getUserProfile = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     message: "User Profile Fetched Successfully",
+    user: rest
+  });
+});
+
+
+// ---------------- update user profile datails --------------------
+export const updateUserProfile = catchAsync(async(req, res, next) => {
+  const { username } = req.body;
+  const userId = req.user.id;
+  console.log(userId);
+  const user = await User.findById(userId);
+
+  if(!user) return next(new AppError("User not found",404));
+
+  user.username = username;
+  
+  if(req.file){
+    const filename = req.file.originalname;
+    if (!filename) return next(new AppError("File name is undefined",400));
+    const imageUrl = await uploadCloud(req.file.buffer, filename, 'profile');
+    if(!imageUrl) return next(new AppError("Failed to upload profile photo"));
+    user.profilePhoto = imageUrl;
+  }
+
+  await user.save();
+  const { password, ...rest } = user.toObject();
+
+  return res.status(200).json({ 
+    message: 'Profile updated successfully',
     user: rest
   });
 });

@@ -1,6 +1,7 @@
 import express from "express";
 import { authenticateUser } from "../middlewares/authMiddleware.js";
-import { getUserProfile, googleAuth, loginUser, logoutUser, refreshAccessToken, registerUser, resendOTP, verifyOTP } from "../controllers/authController.js";
+import { getUserProfile, googleAuth, loginUser, logoutUser, refreshAccessToken, registerUser, resendOTP, updateUserProfile, verifyOTP } from "../controllers/authController.js";
+import { upload } from "../middlewares/multer/multer.js";
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ router.post("/login-user", loginUser);
 router.post("/google-login", googleAuth);
 router.post("/logout-user", logoutUser);
 router.post("/user-refresh-token", refreshAccessToken);
+router.put("/update-profile",authenticateUser, upload.single('profilePhoto'), updateUserProfile);
 
 
 // ------------------ GET methods --------------------
