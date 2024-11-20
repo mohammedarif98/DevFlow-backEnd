@@ -165,11 +165,12 @@ export const unblockUser = catchAsync(async( req, res, next) => {
 export const addCategory = catchAsync(async( req, res, next) => {
   const { categoryName, description } = req.body;
 
-  if( !categoryName || !description){
-    return next(new AppError("All fields are required",400));
+  if (!categoryName || !description) {
+    return next(new AppError("Category name is required", 400));
   }
 
-  const existedCategory = await Category.findOne({categoryName: categoryName.trim()});
+  const existedCategory = await Category.findOne({categoryName: categoryName});
+
   if(existedCategory){
     return next(new AppError("Category already exist",400));
   }
@@ -179,15 +180,14 @@ export const addCategory = catchAsync(async( req, res, next) => {
   }
 
   const uploadedImageUrl = await uploadCloud(req.file.buffer, req.file.originalname, 'category');
-
   if (!uploadedImageUrl) {
     return next(new AppError("Failed to upload image", 500));
   }
 
   const newCategory = new Category({
-    categoryName: categoryName.trim(),
+    categoryName,
     categoryImage: uploadedImageUrl,
-    description: description || "",
+    description,
   });
 
   await newCategory.save();
@@ -199,6 +199,20 @@ export const addCategory = catchAsync(async( req, res, next) => {
   });
 
 });
+
+
+// -------------- get all category ----------------
+export const getCategory = catchAsync(async(req, res, next) => {
+  const category = await Category.find();
+  if(!category){
+    return next(new AppError("Category is not found",404));
+  }
+  return res.status(200).json({
+    status: "success",
+    message: "Category fetched uccessfully",
+    data: { category }
+  })
+})
 
 
 // --------------- category edit function ----------------

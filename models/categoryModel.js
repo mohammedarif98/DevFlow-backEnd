@@ -5,16 +5,18 @@ const categorySchema = new mongoose.Schema({
     categoryName: {
         type: String,
         required: true,
-        unique: true,
-        trim: true
     },
     categoryImage: {
         type: String,
     },
     description: {
         type: String,
-        trim: true, 
+        required: true,
     },
+    isListed: {
+        type: Boolean,
+        default: true
+    }
 },{ timestamps: true }
 );
 

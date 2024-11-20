@@ -28,7 +28,7 @@ app.use(session({
 
 
 app.use(cookieParser());
-app.use(express.json({limit: "10kb"}));        //------- Middleware to parse JSON requests with a limit ----- ---
+app.use(express.json({limit: "10mb"}));        //------- Middleware to parse JSON requests with a limit ----- ---
 app.use(express.urlencoded({ extended: true }));
 app.use(logger('dev'));
 
