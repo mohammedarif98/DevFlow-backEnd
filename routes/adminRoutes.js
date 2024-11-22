@@ -22,7 +22,7 @@ router.post('/categories', authenticateAdmin, upload.single('categoryImage'), ad
 router.put('/block-user/:userId', authenticateAdmin, blockUser);
 router.put('/unblock-user/:userId', authenticateAdmin, unblockUser);
 router.put('/edit-category/:categoryId', authenticateAdmin, upload.single('categoryImage'), editCategory);
-
+ 
 
 
 

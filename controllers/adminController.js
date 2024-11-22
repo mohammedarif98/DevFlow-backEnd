@@ -217,12 +217,8 @@ export const getCategory = catchAsync(async(req, res, next) => {
 
 // --------------- category edit function ----------------
 export const editCategory = catchAsync(async (req, res, next) => {
-  const { categoryId } = req.params;
   const { categoryName, description } = req.body;
-
-  if (!categoryId) {
-    return next(new AppError("Category ID is required", 400));
-  }
+  const { categoryId } = req.params;
 
   const category = await Category.findById(categoryId);
   if (!category) {
@@ -230,11 +226,11 @@ export const editCategory = catchAsync(async (req, res, next) => {
   }
 
   if (categoryName) {
-    const existedCategory = await Category.findOne({ categoryName: categoryName.trim() });
+    const existedCategory = await Category.findOne({ categoryName: categoryName });
     if (existedCategory && existedCategory._id.toString() !== categoryId) {
       return next(new AppError("Category name already exists", 400));
     }
-    category.categoryName = categoryName.trim();
+    category.categoryName = categoryName;
   }
 
   if (description) {

@@ -322,22 +322,26 @@ export const updateUserProfile = catchAsync(async(req, res, next) => {
   const { username } = req.body;
   const userId = req.user.id;
   console.log(userId);
+
   const user = await User.findById(userId);
-
   if(!user) return next(new AppError("User not found",404));
-
-  user.username = username;
   
+  let imageUrl = user.profilePhoto; 
+
   if(req.file){
     const filename = req.file.originalname;
     if (!filename) return next(new AppError("File name is undefined",400));
-    const imageUrl = await uploadCloud(req.file.buffer, filename, 'profile');
+    imageUrl = await uploadCloud(req.file.buffer, filename, 'profile');
     if(!imageUrl) return next(new AppError("Failed to upload profile photo"),500);
-    user.profilePhoto = imageUrl;
   }
 
-  await user.save();
-  const { password, ...rest } = user.toObject();
+  const updatedUser = await User.findByIdAndUpdate(userId,{
+    username,
+    profilePhoto: imageUrl
+  },{new: true})
+
+  if (!updatedUser) return next(new AppError("Failed to update user profile", 500));
+  const { password, ...rest } = updatedUser.toObject();
 
   return res.status(200).json({ 
     message: 'Profile updated successfully',
