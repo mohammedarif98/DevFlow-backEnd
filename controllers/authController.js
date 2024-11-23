@@ -344,7 +344,7 @@ export const updateUserProfile = catchAsync(async(req, res, next) => {
   const { password, ...rest } = updatedUser.toObject();
 
   return res.status(200).json({ 
-    message: 'Profile updated successfully',
+    message: 'Updated Successfully',
     user: rest
   });
 });
@@ -352,7 +352,7 @@ export const updateUserProfile = catchAsync(async(req, res, next) => {
 
 // ---------------- Add blog post--------------------
 export const createBlogPost = catchAsync(async(req, res, next) => {
-  const { title, content, tags, category, isPublished } = req.body;
+  const { title, content, tags, category } = req.body;
   const author = req.user._id; 
 
   if (!title || !content) {
@@ -374,15 +374,14 @@ export const createBlogPost = catchAsync(async(req, res, next) => {
     tags: tags || [],
     category: category || null,
     coverImage: coverImageUrl, 
-    isPublished: isPublished || false,
-    publishedAt: isPublished ? new Date() : null,
+    publishedAt: new Date() 
   });
 
   await newBlogPost.save();
 
   return res.status(201).json({
     status: 'success',
-    message: "Blog post created successfully.",
+    message: "created Successfully",
     blogPost: newBlogPost,
   });
 });
@@ -434,3 +433,15 @@ export const editBlogPost = catchAsync(async (req, res, next) => {
     blogPost,
   });
 });
+
+
+// ---------------- get all blog --------------------
+export const getAllBlogs = catchAsync(async(req, res, next) => {
+  const blogs = await Blog.find({}).populate('author');
+  if(!blogs) return next(new AppError("Blogs is not found",404));
+  return res.status(200).json({
+    status: "success",
+    message: "Blogs fetched uccessfully",
+    data: { blogs }
+  })
+})

@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateUser } from "../middlewares/authMiddleware.js";
-import { createBlogPost, editBlogPost, getUserProfile, googleAuth, loginUser, logoutUser, refreshAccessToken, registerUser, resendOTP, updateUserProfile, verifyOTP } from "../controllers/authController.js";
+import { createBlogPost, editBlogPost, getAllBlogs, getUserProfile, googleAuth, loginUser, logoutUser, refreshAccessToken, registerUser, resendOTP, updateUserProfile, verifyOTP } from "../controllers/authController.js";
 import { upload } from "../middlewares/multer/multer.js";
 
 const router = express.Router();
@@ -19,11 +19,13 @@ router.post('/blog-post', authenticateUser, upload.single('coverImage'), createB
 
 // ------------------ GET methods --------------------
 router.get('/profile', authenticateUser, getUserProfile);
+router.get('/get-blogs',getAllBlogs);
 
 
 // ------------------ PUT methods --------------------
 router.put("/update-profile",authenticateUser, upload.single('profilePhoto'), updateUserProfile);
 router.put('/update-blog-post/:blogId', authenticateUser, upload.single('coverImage'), editBlogPost);
+
 
 export default router;
 

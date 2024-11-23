@@ -11,6 +11,10 @@ const blogSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    coverImage: {
+        type: String,
+        default: ''
+    },
     tags: [{ type: String }],
     author: {
         type: mongoose.Schema.Types.ObjectId,
@@ -21,18 +25,24 @@ const blogSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category'
     },
-    coverImage: {
-        type: String,
-        default: ''
-    },
     isPublished: {
         type: Boolean,
         default: true
     },
     publishedAt: {
-        type: Date
+        type: Date,
+        default: Date.now,
+        get: (date) => {
+            if (!date) return null;
+            const options = { month: 'short', day: '2-digit' };
+            return new Intl.DateTimeFormat('en-US', options).format(date);
+        },
     },
-},{ timestamps: true }
+},{
+    toJSON: { getters: true }, 
+    toObject: { getters: true },
+    timestamps: true,
+}
 );
 
 
