@@ -15,7 +15,10 @@ const blogSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    tags: [{ type: String }],
+    tags: {
+        type: [String], 
+        default: []
+    },
     author: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

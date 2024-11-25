@@ -367,11 +367,20 @@ export const createBlogPost = catchAsync(async(req, res, next) => {
     }
   }
 
+
+  let tagsArray = [];
+  try {
+    tagsArray = JSON.parse(tags || '[]'); // Parse JSON string to array
+  } catch (e) {
+    console.error("Error parsing tags:", e);
+    tagsArray = [];
+  }
+
   const newBlogPost = new Blog({
     title: title.trim(),
     content: content,
     author: author,
-    tags: tags || [],
+    tags: tagsArray,
     category: category || null,
     coverImage: coverImageUrl, 
     publishedAt: new Date() 
@@ -437,11 +446,28 @@ export const editBlogPost = catchAsync(async (req, res, next) => {
 
 // ---------------- get all blog --------------------
 export const getAllBlogs = catchAsync(async(req, res, next) => {
-  const blogs = await Blog.find({}).populate('author');
+  const blogs = await Blog.find({ isPublished:true }).populate('author');
   if(!blogs) return next(new AppError("Blogs is not found",404));
   return res.status(200).json({
     status: "success",
-    message: "Blogs fetched uccessfully",
+    message: "Blogs fetched successfully",
     data: { blogs }
   })
-})
+});
+
+
+//----------------- get the details of selected blogs --------------------
+export const getBlogDetail = catchAsync(async(req, res, next) => {
+  const { blogId } = req.params;
+  const blog = await Blog.findById(blogId).populate('author').populate('category');
+  if(!blog){
+    return next(new AppError("Not found the blog",404));
+  } 
+  res.status(200).json({ 
+    status: 'success',
+    message: "Blog fetched successfully",
+    data: blog
+  });
+});
+
+//------------------  --------------------
