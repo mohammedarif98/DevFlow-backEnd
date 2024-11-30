@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateAdmin } from "../middlewares/adminMiddleware.js";
-import { addCategory, adminLogin, adminLogout, blockUser, editCategory, getAllUsers, getCategory, refreshAdminAccessToken, unblockUser } from "../controllers/adminController.js";
+import { addCategory, adminLogin, adminLogout, blockBlogs, blockUser, editCategory, getAllUsers, getBlogDetail, getBlogList, getCategory, refreshAdminAccessToken, unblockBlogs, unblockUser } from "../controllers/adminController.js";
 import { upload } from "../middlewares/multer/multer.js";
 
 const router = express.Router();
@@ -10,6 +10,8 @@ const router = express.Router();
 // ------------------ GET methods --------------------
 router.get('/list-users', authenticateAdmin, getAllUsers);
 router.get('/list-category', authenticateAdmin, getCategory);
+router.get('/list-blogs', authenticateAdmin, getBlogList);
+router.get('/blog-detail/:blogId', authenticateAdmin, getBlogDetail);
 
 
 // ----------------- POST methods --------------------
@@ -22,7 +24,8 @@ router.post('/categories', authenticateAdmin, upload.single('categoryImage'), ad
 router.put('/block-user/:userId', authenticateAdmin, blockUser);
 router.put('/unblock-user/:userId', authenticateAdmin, unblockUser);
 router.put('/edit-category/:categoryId', authenticateAdmin, upload.single('categoryImage'), editCategory);
- 
+router.put('/block-blog/:blogId',authenticateAdmin, blockBlogs);
+router.put('/unblock-blog/:blogId', authenticateAdmin, unblockBlogs);
 
 
 

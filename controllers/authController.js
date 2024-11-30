@@ -7,11 +7,11 @@ import sendMail from "../utils/sendEmail.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
 import comparePassword from "../utils/comparePassword.js";
 import jwt from "jsonwebtoken";
-import bcryptjs from 'bcryptjs'
+import bcryptjs from "bcryptjs";
 import { uploadCloud } from "../utils/cloudinary.js";
 import Blog from "../models/blogModal.js";
-
-
+import Category from "../models/categoryModel.js";
+import mongoose from "mongoose";
 
 // --------------- User Registration ----------------
 export const registerUser = catchAsync(async (req, res, next) => {
@@ -57,7 +57,6 @@ export const registerUser = catchAsync(async (req, res, next) => {
   });
 });
 
-
 // ---------------- email OTP Verification --------------------
 export const verifyOTP = catchAsync(async (req, res, next) => {
   const { otp } = req.body;
@@ -83,7 +82,6 @@ export const verifyOTP = catchAsync(async (req, res, next) => {
   });
 });
 
-
 // ------------------ Resend email OTP -----------------
 export const resendOTP = catchAsync(async (req, res, next) => {
   const email = req.session.email;
@@ -103,7 +101,7 @@ export const resendOTP = catchAsync(async (req, res, next) => {
     );
   }
 
-const otp = generateOTP();
+  const otp = generateOTP();
   const otpExpires = Date.now() + 5 * 60 * 1000;
 
   // Create or update the OTP record
@@ -131,7 +129,6 @@ const otp = generateOTP();
   });
 });
 
-
 // ------------------ User Login -------------------
 export const loginUser = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
@@ -144,12 +141,15 @@ export const loginUser = catchAsync(async (req, res, next) => {
   if (!user.isVerified)
     return next(
       new AppError("Your email has not been verified. Verify email.", 400)
-  );
+    );
 
   if (user.isBlocked)
     return next(
-      new AppError("Your account has been blocked by admin. Please contact admin", 403)
-  );
+      new AppError(
+        "Your account has been blocked by admin. Please contact admin",
+        403
+      )
+    );
 
   const isPasswordCorrect = await comparePassword(password, user.password);
   if (!isPasswordCorrect) return next(new AppError("Invalid credentials", 401));
@@ -174,7 +174,7 @@ export const loginUser = catchAsync(async (req, res, next) => {
   res.cookie("user-access-token", accessToken, accessTokenCookieOptions);
   res.cookie("user-refresh-token", refreshToken, refreshTokenCookieOptions);
 
-  const { password:userpassword, ...rest } = user.toObject();
+  const { password: userpassword, ...rest } = user.toObject();
 
   return res.status(200).json({
     status: "success",
@@ -185,18 +185,18 @@ export const loginUser = catchAsync(async (req, res, next) => {
   });
 });
 
-
 // --------------- Google authentication -------------------
 export const googleAuth = catchAsync(async (req, res, next) => {
-
   const { email, name, photo } = req.body;
 
   let user = await User.findOne({ email });
   if (!user) {
-    const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-    console.log('Generated Password:', generatedPassword);
+    const generatedPassword =
+      Math.random().toString(36).slice(-8) +
+      Math.random().toString(36).slice(-8);
+    console.log("Generated Password:", generatedPassword);
     const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
-    console.log('Hashed Password:', hashedPassword);
+    console.log("Hashed Password:", hashedPassword);
 
     user = new User({
       username: name,
@@ -240,7 +240,6 @@ export const googleAuth = catchAsync(async (req, res, next) => {
   });
 });
 
-
 // ------------------ User Logout -------------------
 export const logoutUser = catchAsync(async (req, res, next) => {
   res.clearCookie("user-access-token", {
@@ -261,7 +260,6 @@ export const logoutUser = catchAsync(async (req, res, next) => {
   });
 });
 
-
 // ------------------ refresh the user access token -------------------
 export const refreshAccessToken = catchAsync(async (req, res, next) => {
   const refreshToken = req.cookies["user-refresh-token"];
@@ -273,7 +271,7 @@ export const refreshAccessToken = catchAsync(async (req, res, next) => {
       process.env.JWT_REFRESH_TOKEN_SECRET_KEY
     );
 
-    const user = await User.findById(decoded.id).select("-password"); 
+    const user = await User.findById(decoded.id).select("-password");
     if (!user) return next(new AppError("User not found", 401));
 
     const newAccessToken = generateAccessToken(user._id);
@@ -298,7 +296,6 @@ export const refreshAccessToken = catchAsync(async (req, res, next) => {
   }
 });
 
-
 // --------------------- user profile ----------------------
 export const getUserProfile = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
@@ -312,65 +309,85 @@ export const getUserProfile = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     message: "User Profile Fetched Successfully",
-    user: rest
+    user: rest,
   });
 });
 
-
 // ---------------- update user profile datails --------------------
-export const updateUserProfile = catchAsync(async(req, res, next) => {
+export const updateUserProfile = catchAsync(async (req, res, next) => {
   const { username } = req.body;
   const userId = req.user.id;
   console.log(userId);
 
   const user = await User.findById(userId);
-  if(!user) return next(new AppError("User not found",404));
-  
-  let imageUrl = user.profilePhoto; 
+  if (!user) return next(new AppError("User not found", 404));
 
-  if(req.file){
+  let imageUrl = user.profilePhoto;
+
+  if (req.file) {
     const filename = req.file.originalname;
-    if (!filename) return next(new AppError("File name is undefined",400));
-    imageUrl = await uploadCloud(req.file.buffer, filename, 'profile');
-    if(!imageUrl) return next(new AppError("Failed to upload profile photo"),500);
+    if (!filename) return next(new AppError("File name is undefined", 400));
+    imageUrl = await uploadCloud(req.file.buffer, filename, "profile");
+    if (!imageUrl)
+      return next(new AppError("Failed to upload profile photo"), 500);
   }
 
-  const updatedUser = await User.findByIdAndUpdate(userId,{
-    username,
-    profilePhoto: imageUrl
-  },{new: true})
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    {
+      username,
+      profilePhoto: imageUrl,
+    },
+    { new: true }
+  );
 
-  if (!updatedUser) return next(new AppError("Failed to update user profile", 500));
+  if (!updatedUser)
+    return next(new AppError("Failed to update user profile", 500));
   const { password, ...rest } = updatedUser.toObject();
 
-  return res.status(200).json({ 
-    message: 'Updated Successfully',
-    user: rest
+  return res.status(200).json({
+    message: "Updated Successfully",
+    user: rest,
   });
 });
 
+// -------------- get all category ----------------
+export const getAllCategory = catchAsync(async (req, res, next) => {
+  const category = await Category.find();
+  if (!category) {
+    return next(new AppError("Category is not found", 404));
+  }
+  return res.status(200).json({
+    status: "success",
+    message: "Category fetched uccessfully",
+    data: category
+  });
+});
 
 // ---------------- Add blog post--------------------
-export const createBlogPost = catchAsync(async(req, res, next) => {
+export const createBlogPost = catchAsync(async (req, res, next) => {
   const { title, content, tags, category } = req.body;
-  const author = req.user._id; 
+  const author = req.user._id;
 
   if (!title || !content) {
     return next(new AppError("Title and content are required", 400));
   }
 
-  let coverImageUrl = '';
+  let coverImageUrl = "";
   if (req.file) {
-    coverImageUrl = await uploadCloud(req.file.buffer, req.file.originalname, 'blog');
+    coverImageUrl = await uploadCloud(
+      req.file.buffer,
+      req.file.originalname,
+      "blog"
+    );
     if (!coverImageUrl) {
       return next(new AppError("Failed to upload image", 500));
     }
   }
 
-
   let tagsArray = [];
   try {
-    tagsArray = JSON.parse(tags || '[]'); // Parse JSON string to array
+    tagsArray = JSON.parse(tags || "[]"); // Parse JSON string to array
   } catch (e) {
     console.error("Error parsing tags:", e);
     tagsArray = [];
@@ -382,25 +399,24 @@ export const createBlogPost = catchAsync(async(req, res, next) => {
     author: author,
     tags: tagsArray,
     category: category || null,
-    coverImage: coverImageUrl, 
-    publishedAt: new Date() 
+    coverImage: coverImageUrl,
+    publishedAt: new Date(),
   });
 
   await newBlogPost.save();
 
   return res.status(201).json({
-    status: 'success',
+    status: "success",
     message: "created Successfully",
     blogPost: newBlogPost,
   });
 });
 
-
 // ---------------- Edit blog post --------------------
 export const editBlogPost = catchAsync(async (req, res, next) => {
-  const { title, content, tags, category, isPublished } = req.body;
-  const { blogId } = req.params; 
-  const userId = req.user._id; 
+  const { title, content, tags, category } = req.body;
+  const { blogId } = req.params;
+  const userId = req.user._id;
   let updatedCoverImageUrl = null;
 
   if (!blogId) {
@@ -413,11 +429,25 @@ export const editBlogPost = catchAsync(async (req, res, next) => {
   }
 
   if (blogPost.author.toString() !== userId.toString()) {
-    return next(new AppError("You are not authorized to edit this blog post", 403));
+    return next(
+      new AppError("You are not authorized to edit this blog post", 403)
+    );
+  }
+
+  let tagsArray = [];
+  try {
+    tagsArray = JSON.parse(tags || "[]");
+  } catch (e) {
+    console.error("Error parsing tags:", e);
+    tagsArray = [];
   }
 
   if (req.file) {
-    updatedCoverImageUrl = await uploadCloud(req.file.buffer, req.file.originalname, 'blog');
+    updatedCoverImageUrl = await uploadCloud(
+      req.file.buffer,
+      req.file.originalname,
+      "blog"
+    );
     if (!updatedCoverImageUrl) {
       return next(new AppError("Failed to upload image", 500));
     }
@@ -425,49 +455,127 @@ export const editBlogPost = catchAsync(async (req, res, next) => {
 
   if (title) blogPost.title = title.trim();
   if (content) blogPost.content = content;
-  if (tags) blogPost.tags = tags;
-  if (category) blogPost.category = category;
-  if (updatedCoverImageUrl) blogPost.coverImage = updatedCoverImageUrl;
-
-  if (typeof isPublished !== "undefined") {
-    blogPost.isPublished = isPublished;
-    blogPost.publishedAt = isPublished ? new Date() : null;
+  if (tags) blogPost.tags = tagsArray;
+  if (category !== undefined) {
+    if (category === null) {
+      blogPost.category = null;
+    } else {
+      const isValidObjectId = mongoose.Types.ObjectId.isValid(category);
+      if (!isValidObjectId) {
+        return next(new AppError("Invalid category ID", 400));
+      }
+      const existingCategory = await Category.findById(category);
+      if (!existingCategory) {
+        return next(new AppError("Category not found", 404));
+      }
+      blogPost.category = category;
+    }
   }
+  if (updatedCoverImageUrl) blogPost.coverImage = updatedCoverImageUrl;
 
   await blogPost.save();
 
   return res.status(200).json({
-    status: 'success',
-    message: "Blog post updated successfully.",
+    status: "success",
+    message: "Blog updated successfully.",
     blogPost,
   });
 });
 
-
 // ---------------- get all blog --------------------
-export const getAllBlogs = catchAsync(async(req, res, next) => {
-  const blogs = await Blog.find({ isPublished:true }).populate('author');
-  if(!blogs) return next(new AppError("Blogs is not found",404));
+export const getAllBlogs = catchAsync(async (req, res, next) => {
+  const blogs = await Blog.find({ isPublished: true })
+    .populate("author")
+    .sort({ createdAt: -1 });
+  if (!blogs) return next(new AppError("Blogs is not found", 404));
   return res.status(200).json({
     status: "success",
     message: "Blogs fetched successfully",
-    data: { blogs }
-  })
-});
-
-
-//----------------- get the details of selected blogs --------------------
-export const getBlogDetail = catchAsync(async(req, res, next) => {
-  const { blogId } = req.params;
-  const blog = await Blog.findById(blogId).populate('author').populate('category');
-  if(!blog){
-    return next(new AppError("Not found the blog",404));
-  } 
-  res.status(200).json({ 
-    status: 'success',
-    message: "Blog fetched successfully",
-    data: blog
+    data: { blogs },
   });
 });
 
-//------------------  --------------------
+//----------------- get the details of selected blogs --------------------
+export const getBlogDetail = catchAsync(async (req, res, next) => {
+  const { blogId } = req.params;
+  const blog = await Blog.findById(blogId)
+    .populate("author")
+    .populate("category");
+  if (!blog) {
+    return next(new AppError("Not found the blog", 404));
+  }
+  res.status(200).json({
+    status: "success",
+    message: "Blog fetched successfully",
+    data: blog,
+  });
+});
+
+//------------------ fetch the uploaded  own blogs of user --------------------
+export const getUserBlogs = catchAsync(async (req, res, next) => {
+  const userId = req.user.id;
+  if (!userId) {
+    return next(new AppError("User not found. Please logIn.", 401));
+  }
+  const blogs = await Blog.find({ author: userId }).sort({ createdAt: -1 });
+  res.status(200).json({
+    status: "success",
+    message: "Blogs Fetched Successfully",
+    data: blogs,
+  });
+});
+
+// ------------------ like blog  ----------------------
+export const likeBlog = catchAsync(async(req, res, next) => {
+  const {blogId} = req.params;
+  const userId = req.user._id;
+
+  const blog = await Blog.findByIdAndUpdate(
+    blogId,
+    { $addToSet: {likes: userId} },
+    {new: true}
+  ); 
+
+  if (!blog) return next(new AppError("Blog not found",404));
+  
+  res.status(200).json({
+    status: "success",
+    message: "liked Successfully",
+    data: blog.likes.length
+  })
+})
+
+// ------------------ unlike blog  ---------------------
+export const UnlikeBlog = catchAsync(async(req, res, next) => {
+  const {blogId} = req.params;
+  const userId = req.user._id;
+  
+  const blog = await Blog.findByIdAndUpdate(
+    blogId,
+    {$pull: {likes: userId}},
+    {new: true}
+  );
+  
+  if (!blog) return next(new AppError("Blog not found",404));
+  
+  res.status(200).json({
+    status: "success",
+    message: "unliked Successfully",
+    data: blog.likes.length
+  })
+});
+
+// ------------------ total like count of blog  ---------------------
+export const getBlogLikeCount = catchAsync(async(req, res, next) => {
+  const { blogId } = req.params;
+  const blog = await Blog.findById(blogId);
+  if (!blog) {
+    return next(new AppError('Blog not found', 404));
+  }
+  const likeCount = blog.likes.length();
+  res.status(200).json({
+    status: "success",
+    message: "Total like fetched",
+    data: {likeCount}
+  })
+})

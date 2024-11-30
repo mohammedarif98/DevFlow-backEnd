@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateUser } from "../middlewares/authMiddleware.js";
-import { createBlogPost, editBlogPost, getAllBlogs, getBlogDetail, getUserProfile, googleAuth, loginUser, logoutUser, refreshAccessToken, registerUser, resendOTP, updateUserProfile, verifyOTP } from "../controllers/authController.js";
+import { createBlogPost, editBlogPost, getAllBlogs, getAllCategory, getBlogDetail, getBlogLikeCount, getUserBlogs, getUserProfile, googleAuth, likeBlog, loginUser, logoutUser, refreshAccessToken, registerUser, resendOTP, UnlikeBlog, updateUserProfile, verifyOTP } from "../controllers/authController.js";
 import { upload } from "../middlewares/multer/multer.js";
 
 const router = express.Router();
@@ -9,23 +9,32 @@ const router = express.Router();
 // ----------------- POST methods --------------------
 router.post("/register-user", registerUser);
 router.post("/verifyOTP", verifyOTP);
-router.get('/resendOTP', resendOTP);
+router.get('/resendOTP', resendOTP); 
 router.post("/login-user", loginUser);
 router.post("/google-login", googleAuth);
 router.post("/logout-user", logoutUser);
 router.post("/user-refresh-token", refreshAccessToken);
 router.post('/blog-post', authenticateUser, upload.single('coverImage'), createBlogPost);
+router.post('/like-blog/:blogId',authenticateUser, likeBlog);
 
 
 // ------------------ GET methods --------------------
 router.get('/profile', authenticateUser, getUserProfile);
+router.get('/get-category', getAllCategory);
 router.get('/get-blogs',getAllBlogs);
 router.get('/get-blog-detail/:blogId',getBlogDetail);
+router.get('/get-user-blog', authenticateUser ,getUserBlogs);
+router.get('/get-like-count/:blogId', getBlogLikeCount);
 
 
 // ------------------ PUT methods --------------------
-router.put("/update-profile",authenticateUser, upload.single('profilePhoto'), updateUserProfile);
+router.put('/update-profile',authenticateUser, upload.single('profilePhoto'), updateUserProfile);
 router.put('/update-blog-post/:blogId', authenticateUser, upload.single('coverImage'), editBlogPost);
+
+
+// --------------------- DELETE method -----------------
+router.delete('/unlike-blog/:blogId',authenticateUser, UnlikeBlog);
+
 
 
 export default router;
