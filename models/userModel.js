@@ -30,9 +30,9 @@ const userSchema = new mongoose.Schema({
         trim: true,
         select: false
     },
-    bookmarkBlogs: [{
+    bookmarks: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Blog"
+        ref: "Blog", 
     }],
     isVerified: {
         type: Boolean,

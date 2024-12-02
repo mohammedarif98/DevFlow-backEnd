@@ -12,6 +12,7 @@ import { uploadCloud } from "../utils/cloudinary.js";
 import Blog from "../models/blogModal.js";
 import Category from "../models/categoryModel.js";
 import mongoose from "mongoose";
+import Comment from "../models/commentModel.js";
 
 // --------------- User Registration ----------------
 export const registerUser = catchAsync(async (req, res, next) => {
@@ -578,4 +579,99 @@ export const getBlogLikeCount = catchAsync(async(req, res, next) => {
     message: "Total like fetched",
     data: {likeCount}
   })
+})
+
+
+//------------------ add blog to bookmark  ------------------
+export const bookmarkBlog = catchAsync(async(req, res, next) => {
+  const { blogId } = req.params;
+  const userId = req.user._id;
+  
+  const blog = await Blog.findById(blogId);
+  if (!blog) {
+    return next(new AppError('Blog not found', 404));
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { bookmarks: blogId } }, 
+      { new: true } 
+  );
+
+  res.status(200).json({
+    status: "success",
+    message: "blog bookmarked successfully",
+    data: updatedUser.bookmarks
+  })
+});
+
+
+//------------------ remove blogs from bookmark ------------------
+export const unbookmarkBlog = catchAsync(async(req, res, next) => {
+  const { blogId } = req.params;
+  const userId = req.user._id;
+
+  const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { bookmarks: blogId } }, 
+      { new: true }
+  );
+
+  if(!updatedUser) return res.status(404).json({ message: "User not found" });
+    
+  res.status(200).json({
+    status: "success",
+    message: "blog unbookmarked successfully",
+    data: updatedUser.bookmarks
+  })
+});
+
+
+//---------------- add comments to blog -------------------
+export const addComment  = catchAsync(async(req, res, next) => {
+  const { blogId } = req.params;
+  const userId = req.user._id;
+  const { content } = req.body;
+
+  if (!content || content.trim() === '') {
+    return next( new AppError('Comment content is required.', 400));
+  }
+  
+  const blog = await Blog.findById(blogId);
+  if(!blog) return next(new AppError("Blog not found", 404)); 
+
+  const comment = new Comment({
+    content,
+    user: userId,
+    blog: blogId,
+  });
+
+  await comment.save();
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Comment added successfully',
+    data: comment
+  });
+})
+
+
+//----------------get the comments of own blog post -------------------
+export const getComments = catchAsync(async(req, res, next) => {
+  const { blogId } = req.params;
+  // const userId = req.user._id;
+
+  const comments = await Comment.find({ blog: blogId, isDeleted: false }).populate('user').populate('replies').sort({createdAt: -1});
+
+  if (!comments) {
+    return next(new AppError("No comments found for this blog", 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Comment fetched successfully',
+    results: comments.length,
+    data: { comments }
+  });
+
 })
