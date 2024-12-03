@@ -23,10 +23,14 @@ const commentSchema = new mongoose.Schema({
             ref: 'User',
             required: true
         },
-        content: {
+        replyContent: {
             type: String,
             required: true,
             trim: true,
+        },
+        isReplyDeleted: {
+            type: Boolean,
+            default: false, 
         },
         createdAt: {
             type: Date,

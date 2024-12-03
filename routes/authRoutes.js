@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateUser } from "../middlewares/authMiddleware.js";
-import { addComment, bookmarkBlog, createBlogPost, editBlogPost, getAllBlogs, getAllCategory, getBlogDetail, getBlogLikeCount, getComments, getUserBlogs, getUserProfile, googleAuth, likeBlog, loginUser, logoutUser, refreshAccessToken, registerUser, resendOTP, unbookmarkBlog, UnlikeBlog, updateUserProfile, verifyOTP } from "../controllers/authController.js";
+import { addComment, bookmarkBlog, createBlogPost, deleteComments, deleteReply, editBlogPost, getAllBlogs, getAllCategory, getBlogDetail, getBlogLikeCount, getComments, getUserBlogs, getUserProfile, googleAuth, likeBlog, loginUser, logoutUser, refreshAccessToken, registerUser, repliesToComments, resendOTP, unbookmarkBlog, UnlikeBlog, updateUserProfile, verifyOTP } from "../controllers/authController.js";
 import { upload } from "../middlewares/multer/multer.js";
 
 const router = express.Router();
@@ -18,6 +18,7 @@ router.post('/blog-post', authenticateUser, upload.single('coverImage'), createB
 router.post('/like-blog/:blogId',authenticateUser, likeBlog);
 router.post('/bookmark-blog/:blogId',authenticateUser, bookmarkBlog);
 router.post('/add-comment-blog/:blogId',authenticateUser, addComment);
+router.post('/blogs/:blogId/comments/:commentId/replies', authenticateUser, repliesToComments);
 
 
 // ------------------ GET methods --------------------
@@ -38,6 +39,8 @@ router.put('/update-blog-post/:blogId', authenticateUser, upload.single('coverIm
 // --------------------- DELETE method -----------------
 router.delete('/unlike-blog/:blogId',authenticateUser, UnlikeBlog);
 router.delete('/unbookmark-blog/:blogId',authenticateUser, unbookmarkBlog);
+router.delete('/delete-comment/:commentId', authenticateUser, deleteComments);
+router.delete('/delete-comment/:commentId/reply/:replyId', authenticateUser, deleteReply);
 
 
 

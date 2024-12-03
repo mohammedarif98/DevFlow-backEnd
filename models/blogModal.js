@@ -33,6 +33,10 @@ const blogSchema = new mongoose.Schema({
         ref: 'User',
         default: []
     }],
+    comments: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Comment',
+    }],
     isPublished: {
         type: Boolean,
         default: true
@@ -54,5 +58,5 @@ const blogSchema = new mongoose.Schema({
 );
 
 
-const Blog = mongoose.model("Blog",blogSchema);
+const Blog = mongoose.model("Blog", blogSchema);
 export default Blog;

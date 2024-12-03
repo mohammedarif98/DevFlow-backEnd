@@ -483,18 +483,23 @@ export const editBlogPost = catchAsync(async (req, res, next) => {
   });
 });
 
+
 // ---------------- get all blog --------------------
 export const getAllBlogs = catchAsync(async (req, res, next) => {
+
   const blogs = await Blog.find({ isPublished: true })
-    .populate("author")
+    .populate("author").populate('comments')
     .sort({ createdAt: -1 });
+
   if (!blogs) return next(new AppError("Blogs is not found", 404));
+  
   return res.status(200).json({
     status: "success",
     message: "Blogs fetched successfully",
     data: { blogs },
   });
 });
+
 
 //----------------- get the details of selected blogs --------------------
 export const getBlogDetail = catchAsync(async (req, res, next) => {
@@ -659,13 +664,16 @@ export const addComment  = catchAsync(async(req, res, next) => {
 //----------------get the comments of own blog post -------------------
 export const getComments = catchAsync(async(req, res, next) => {
   const { blogId } = req.params;
-  // const userId = req.user._id;
 
-  const comments = await Comment.find({ blog: blogId, isDeleted: false }).populate('user').populate('replies').sort({createdAt: -1});
+  const comments = await Comment.find({
+      blog: blogId, 
+      isDeleted: false 
+    }).
+      populate('user').
+      populate('replies').
+      sort({createdAt: -1});
 
-  if (!comments) {
-    return next(new AppError("No comments found for this blog", 404));
-  }
+  if (!comments) return next(new AppError("No comments found for this blog", 404));
 
   res.status(200).json({
     status: 'success',
@@ -673,5 +681,86 @@ export const getComments = catchAsync(async(req, res, next) => {
     results: comments.length,
     data: { comments }
   });
-
 })
+
+
+//---------------- give replies on already added comments of blog post -------------------
+export const repliesToComments = catchAsync(async(req, res, next) => {
+  const { blogId, commentId } = req.params;
+  const { replyContent } = req.body;
+  const userId = req.user._id;
+
+  if (!mongoose.Types.ObjectId.isValid(blogId)) return next(new AppError("Invalid blog ID format", 400));
+  if (!mongoose.Types.ObjectId.isValid(commentId)) return next(new AppError("Invalid comment ID format", 400));
+
+  const comment = await Comment.findById(commentId).populate('user').populate('replies.user');
+  if (!comment) return next(new AppError("Comment not found", 404));
+
+  const reply = {
+    user: userId,
+    replyContent,
+    createdAt: Date.now(),
+  };
+
+  comment.replies.push(reply);
+  await comment.save();
+  await comment.populate('replies');
+
+  res.status(201).json({
+    status: 'success',
+    message: 'Reply added successfully',
+    data: comment 
+  });
+});
+
+
+//----------------delete the comments of blog posted -------------------
+export const deleteComments = catchAsync(async(req, res, next) => {
+  const { commentId } = req.params; 
+  const userId = req.user._id;
+
+  const comment = await Comment.findById(commentId);
+
+  if (!comment) return next(new AppError('Comment not found', 404));
+
+  if (String(comment.user) !== String(userId)) return next(new AppError('Delete only by commented user', 403));
+
+  comment.isDeleted = true;
+  comment.replies = [];       // removing all replies
+  await comment.save();
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Comment and its replies deleted successfully'
+  });
+});
+
+
+//----------------delete the comment reply of blog posted -------------------
+export const deleteReply = catchAsync(async (req, res, next) => {
+  const { commentId, replyId } = req.params;
+  const userId = req.user._id;
+
+  if (!mongoose.Types.ObjectId.isValid(commentId)) return next(new AppError('Invalid comment ID', 400));
+  if (!mongoose.Types.ObjectId.isValid(replyId)) return next(new AppError('Invalid reply ID', 400));
+
+  const comment = await Comment.findById(commentId).populate('replies.user');
+  if (!comment) return next(new AppError('Comment not found', 404));
+
+  // Find the specific reply by replyId
+  const reply = comment.replies.id(replyId); 
+  if (!reply) return next(new AppError('Reply not found', 404));
+
+  // Check if the user is the owner of the reply
+  if (String(reply.user._id) !== String(userId)) {
+    return next(new AppError('Delete only by replied user', 403));
+  }
+
+  reply.isReplyDeleted = true;
+  await comment.save();
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Reply of comment deleted successfully'
+  });
+});
