@@ -34,6 +34,18 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Blog", 
     }],
+    following: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    }],
+    followers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    }],
+    followedCategory: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category"
+    }],
     isVerified: {
         type: Boolean,
         default: false

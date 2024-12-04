@@ -365,6 +365,22 @@ export const getAllCategory = catchAsync(async (req, res, next) => {
   });
 });
 
+
+//-------------- get all user --------------------
+export const getAllUser = catchAsync(async (req, res, next) => {
+  const currentUserId = req.user._id; 
+  const users = await User.find({ _id: { $ne: currentUserId }, isVerified: true, isBlocked: false });
+  if(!users || users.length === 0){
+    return next(new AppError("User not found", 404))
+  }
+  return res.status(200).json({
+    status: "success",
+    message: "Users fetched uccessfully",
+    data: users
+  });
+});
+
+
 // ---------------- Add blog post--------------------
 export const createBlogPost = catchAsync(async (req, res, next) => {
   const { title, content, tags, category } = req.body;
@@ -762,5 +778,117 @@ export const deleteReply = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     message: 'Reply of comment deleted successfully'
+  });
+});
+
+
+//------------------- follow user ----------------------
+export const followUser = catchAsync( async(req, res, next) => {
+  const userId = req.user._id;
+  const { userIdToFollow } = req.params;
+
+  if (userId.equals(userIdToFollow)) return next(new AppError('You cannot follow yourself', 400));
+
+  // Find user and the user to follow
+  const user = await User.findById(userId).select('following');
+  const userToFollow = await User.findById(userIdToFollow).select('followers');
+  if (!userToFollow) return next(new AppError('User to follow not found', 404));
+
+  // add the user to the following list
+  await User.findByIdAndUpdate(userId, {$addToSet: {following: userIdToFollow}});
+  // add the user to the followers list of the user being followed
+  await User.findByIdAndUpdate(userIdToFollow, {$addToSet: {followers: userId}});
+
+  res.status(200).json({
+    status: 'success',
+    message: 'You are now following this user',
+  });
+});
+
+
+//------------------ unfollow user -----------------------
+export const unfollowUser = catchAsync( async(req, res, next) => {
+  const userId = req.user._id;
+  const { userIdToUnfollow } = req.params;
+
+  // Find user and the user to unfollow
+  const user = await User.findById(userId).select('following');
+  const userToUnfollow = await User.findById(userIdToUnfollow).select('followers');
+  if(!userToUnfollow) return next(new AppError("User to unfollow not found",404));
+
+  // Check user is not following the user
+  if (!user.following.includes(userIdToUnfollow)) return next(new AppError('You are not following this user', 400));
+
+  // remove user from the following list
+  await User.findByIdAndUpdate(userId, {$pull: {following: userIdToUnfollow}});
+  // remove the current user from the followers list of the user being unfollowed
+  await User.findByIdAndUpdate(userIdToUnfollow, {$pull: {followers: userId}});
+  
+  res.status(200).json({
+    status: 'success',
+    message: 'You are now unfollowed this user',
+  });
+});
+
+
+//----------------------- follow the category by user --------------------------
+export const followCategory = catchAsync( async(req, res, next) => {
+  const userId = req.user._id;
+  const { categoryId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(categoryId)) return next(new AppError('Invalid category ID.', 400));
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $addToSet :{ followedCategory: categoryId } },
+    { new: true }
+  );
+
+  if(!user) return next(new AppError("user not found",404));
+
+  res.status(200).json({
+    status: 'success',
+    message: "catetgory follow successfully",
+    data: user
+  });
+});
+
+
+//----------------------- unfollow the category by user ------------------------
+export const unfollowCategory = catchAsync( async(req, res, next) => {
+  const userId = req.user._id;
+  const { categoryId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(categoryId)) return next(new AppError('Invalid category ID.', 400));
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    {$pull :{ followedCategory: categoryId }},
+    {new : true}
+  );
+
+  if(!user) return next(new AppError("user not found",404));
+
+
+  res.status(200).json({
+    status: 'success',
+    message: "catetgory is unfollow successfully",
+    data: user
+  });
+});
+
+
+//------------------- get the details of followed user   ------------------------
+export const getFollowedUsers = catchAsync( async(req, res, next) => {
+  const userId = req.user._id;
+  // Find the logged-in user and populate the 'following' array with user details
+  const user = await User.findById(userId).populate('following');
+  if (!user) return next(new AppError('User not found', 404));
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      followedUsers: user.following,
+    },
   });
 });
