@@ -533,7 +533,7 @@ export const getBlogDetail = catchAsync(async (req, res, next) => {
   });
 });
 
-//------------------ fetch the uploaded  own blogs of user --------------------
+//------------------ fetch the uploaded own blogs of user --------------------
 export const getUserBlogs = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
   if (!userId) {
@@ -887,8 +887,64 @@ export const getFollowedUsers = catchAsync( async(req, res, next) => {
 
   res.status(200).json({
     status: 'success',
+    message: "successfully ger followedusers",
     data: {
       followedUsers: user.following,
     },
   });
 });
+
+
+//--------------------------------------------------
+export const getUsersPage = catchAsync( async(req, res, next) => {
+  const userId = req.user._id;
+  const { usersId } = req.params;    // to get thw id of blog posted users
+
+  if (!userId) {
+    return next(new AppError('You are not logged in. Please log in to access this resource.', 401));
+  }
+
+  const user = await User.findById(usersId);
+  if (!user) return next(new AppError('User not found', 404));
+
+  const blogs = await Blog.find({
+    author: usersId 
+  })
+    .populate('category')
+    .populate({
+      path: 'author',
+      populate: ['following', 'followers'],       // Populate followers and following of author
+    }).sort({ createdAt: -1 });
+
+  res.status(200).json({
+    status: 'success',
+    message: "users details get successfully",
+    data: blogs 
+  });
+}); 
+
+
+//--------------------------------------------------
+export const getCategoryPage = catchAsync( async(req, res, next) => {
+  const userId = req.user._id;
+  const categoryId = req.params;
+  console.log(categoryId);
+
+  if (!userId) {
+    return next(new AppError('You are not logged in. Please log in to access this resource.', 401));
+  }
+
+  const category = await Category.findById(categoryId);
+  if (!category) return next(new AppError('Caategory id not found', 404));
+
+  const categories= await Blog.find({
+    category: categoryId
+  })
+  .populate('category');
+
+  res.status(200).json({
+    status: 'success',
+    message: "categies listed successfully",
+    data: categories
+  });
+}); 
