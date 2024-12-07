@@ -927,7 +927,7 @@ export const getUsersPage = catchAsync( async(req, res, next) => {
 //--------------------------------------------------
 export const getCategoryPage = catchAsync( async(req, res, next) => {
   const userId = req.user._id;
-  const categoryId = req.params;
+  const { categoryId } = req.params;
   console.log(categoryId);
 
   if (!userId) {
@@ -935,16 +935,35 @@ export const getCategoryPage = catchAsync( async(req, res, next) => {
   }
 
   const category = await Category.findById(categoryId);
-  if (!category) return next(new AppError('Caategory id not found', 404));
+  if (!category) return next(new AppError('Category id not found', 404));
 
   const categories= await Blog.find({
     category: categoryId
   })
-  .populate('category');
+  .populate('author')
+  .populate('category')
 
   res.status(200).json({
     status: 'success',
     message: "categies listed successfully",
     data: categories
+  });
+}); 
+
+
+//---------------- get the logined user data ------------------
+export const getLoginUserData = catchAsync( async(req, res, next) => {
+  const userId = req.user._id
+
+  if (!userId) {
+    return next(new AppError('You are not logged in. Please log in to access this resource.', 401));
+  }
+
+  const user = await User.find(userId).populate(['followedCategory','followers','bookmarks']);
+
+  res.status(200).json({
+    status: 'success',
+    message: "user data get successfully",
+    data: user
   });
 }); 
