@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateAdmin } from "../middlewares/adminMiddleware.js";
-import { addCategory, adminLogin, adminLogout, blockBlogs, blockUser, editCategory, getAllUsers, getBlogDetail, getBlogList, getCategory, refreshAdminAccessToken, unblockBlogs, unblockUser } from "../controllers/adminController.js";
+import { addCategory, adminLogin, adminLogout, blockBlogs, blockUser, editCategory, getAllUsers, getBlogDetail, getBlogList, getCategory, getDashBoard, refreshAdminAccessToken, unblockBlogs, unblockUser } from "../controllers/adminController.js";
 import { upload } from "../middlewares/multer/multer.js";
 
 const router = express.Router();
@@ -12,6 +12,7 @@ router.get('/list-users', authenticateAdmin, getAllUsers);
 router.get('/list-category', authenticateAdmin, getCategory);
 router.get('/list-blogs', authenticateAdmin, getBlogList);
 router.get('/blog-detail/:blogId', authenticateAdmin, getBlogDetail);
+router.get('/dashboard', authenticateAdmin, getDashBoard);
 
 
 // ----------------- POST methods --------------------

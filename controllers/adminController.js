@@ -317,4 +317,90 @@ export const getBlogDetail = catchAsync(async(req, res, next) => {
     message: "Blog fetched successfully",
     data: blog,
   });
-})
+
+});
+
+
+//-------------------- admin dashboard details ----------------------------
+export const getDashBoard = catchAsync( async(req, res, next) => {
+
+  const [usersCount, activeUserCount, categoriesCount, blogsCount,usersData] = await Promise.all([
+    User.countDocuments(),
+    User.countDocuments({isVerified: true, isBlocked: false}),
+    Category.countDocuments(),
+    Blog.countDocuments(),
+    User.find({}),
+  ]);
+
+  // Calculate monthly account creations
+  const monthlyAccountCreations = usersData.reduce((acc, user) => {
+    const month = new Date(user.createdAt).getMonth();
+    acc[month] = (acc[month] || 0) + 1;
+    return acc;
+  }, Array(12).fill(0));
+
+  // Calculate the count of each category used in blogs
+  const categoryBlogCount = await Blog.aggregate([
+    {
+      $group: {
+        _id: '$category',
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $lookup: {
+        from: 'categories', // The name of the categories collection
+        localField: '_id',
+        foreignField: '_id',
+        as: 'categoryDetails',
+      },
+    },
+    {
+      $unwind: '$categoryDetails',
+    },
+    {
+      $project: {
+        _id: 0,
+        categoryName: '$categoryDetails.categoryName',
+        count: 1,
+      },
+    },
+  ]);
+
+
+  // Calculate the count of blogs created in month
+  const monthlyBlogCreations = await Blog.aggregate([
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        month: '$_id',
+        count: 1,
+      },
+    },
+    {
+      $sort: { month: 1 },
+    },
+  ]);
+
+
+  res.status(200).json({
+    status: "success",
+    message: "datas fetched successfully",
+    data: { 
+      usersCount,
+      activeUserCount,
+      categoriesCount,
+      blogsCount,
+      monthlyAccountCreations,
+      categoryBlogCount,
+      monthlyBlogCreations,
+    }
+  });
+
+});
