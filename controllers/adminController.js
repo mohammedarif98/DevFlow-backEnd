@@ -369,24 +369,28 @@ export const getDashBoard = catchAsync( async(req, res, next) => {
 
 
   // Calculate the count of blogs created in month
-  const monthlyBlogCreations = await Blog.aggregate([
+  const monthlyBlogCreationsAggregation = await Blog.aggregate([
     {
       $group: {
-        _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+        _id: { $month: '$createdAt' },
         count: { $sum: 1 },
       },
     },
     {
-      $project: {
-        _id: 0,
-        month: '$_id',
-        count: 1,
-      },
-    },
-    {
-      $sort: { month: 1 },
+      $sort: { _id: 1 },
     },
   ]);
+
+  // Initialize an array for monthly blog counts
+  const monthlyBlogCreations = Array(12).fill(0);
+
+  // Populate the monthly blog counts array
+  monthlyBlogCreationsAggregation.forEach(item => {
+    const monthIndex = item._id - 1; // Months are 1-based
+    if (monthIndex >= 0 && monthIndex < 12) {
+      monthlyBlogCreations[monthIndex] = item.count;
+    }
+  });
 
 
   res.status(200).json({

@@ -967,3 +967,25 @@ export const getLoginUserData = catchAsync( async(req, res, next) => {
     data: user
   });
 }); 
+
+
+//------------------------------------------
+export const getUserBlogsAndBookmarks = catchAsync( async(req, res, next) => {
+  const userId = req.user._id;
+
+  const createdBlogs = await Blog.find({ author: userId })
+      .populate("author") 
+      .populate("category")
+      .sort({ createdAt: -1 }); 
+
+    const bookmarkedBlogs = await Blog.find({ _id: { $in: req.user.bookmarks } })
+      .populate("author") 
+      .populate("category")
+      .sort({ createdAt: -1 }); 
+
+    res.status(200).json({
+      status: 'success',
+      message: "user blogs and bookmarks data get successfully",
+      data: { createdBlogs,bookmarkedBlogs }
+    });
+})

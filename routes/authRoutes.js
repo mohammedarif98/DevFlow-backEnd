@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateUser } from "../middlewares/authMiddleware.js";
-import { addComment, bookmarkBlog, createBlogPost, deleteComments, deleteReply, editBlogPost, followCategory, followUser, getAllBlogs, getAllCategory, getAllUser, getBlogDetail, getBlogLikeCount, getCategoryPage, getComments, getFollowedUsers, getLoginUserData, getUserBlogs, getUserProfile, getUsersPage, googleAuth, likeBlog, loginUser, logoutUser, refreshAccessToken, registerUser, repliesToComments, resendOTP, unbookmarkBlog, unfollowCategory, unfollowUser, UnlikeBlog, updateUserProfile, verifyOTP } from "../controllers/authController.js";
+import { addComment, bookmarkBlog, createBlogPost, deleteComments, deleteReply, editBlogPost, followCategory, followUser, getAllBlogs, getAllCategory, getAllUser, getBlogDetail, getBlogLikeCount, getCategoryPage, getComments, getFollowedUsers, getLoginUserData, getUserBlogs, getUserBlogsAndBookmarks, getUserProfile, getUsersPage, googleAuth, likeBlog, loginUser, logoutUser, refreshAccessToken, registerUser, repliesToComments, resendOTP, unbookmarkBlog, unfollowCategory, unfollowUser, UnlikeBlog, updateUserProfile, verifyOTP } from "../controllers/authController.js";
 import { upload } from "../middlewares/multer/multer.js";
 
 const router = express.Router();
@@ -36,6 +36,7 @@ router.get('/followed-users', authenticateUser, getFollowedUsers );
 router.get('/users-datails/:usersId', authenticateUser, getUsersPage);
 router.get('/categories-datails/:categoryId', authenticateUser, getCategoryPage);
 router.get('/login-user-datails', authenticateUser, getLoginUserData);
+router.get('/user-blogs-bookmarks', authenticateUser, getUserBlogsAndBookmarks);
 
 
 // ------------------ PUT methods --------------------

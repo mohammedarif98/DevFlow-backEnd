@@ -14,14 +14,11 @@ import globalErrorHandler from "../error/globalErrorHandler.js";
 
 function AppError(message, statusCode) {
     const error = new Error(message);  // Create an error object with the message
-    
     error.statusCode = statusCode;
     error.status = `${statusCode}`.startsWith("4") ? "fail" : "error";
-    // error.status = statusCode >= 400 && statusCode < 500 ? "fail" : "error";
     error.isOperational = true;
-  
     Error.captureStackTrace(error, globalErrorHandler);
-  
+    // Error.captureStackTrace(error, AppError);
     return error;  
   }
   
